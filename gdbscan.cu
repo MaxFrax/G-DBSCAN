@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <thrust/scan.h>
 
 #define CHECK(call)                                                         \
 {                                                                           \
@@ -87,10 +88,17 @@ int main()
 	for(int i = 0; i < n; i++) {
 		printf("%d\t", degrees[i]);
 	}
+	printf("\n");
+
+	thrust::exclusive_scan(degrees, degrees + n, degrees); 
+
+	for(int i = 0; i < n; i++) {
+		printf("%d\t", degrees[i]);
+	}
 
 	// 4. Free memory
 	for (int i = 0; i < d; i++) {
-        printf("Freeing %d\n", i);
+        printf("\nFreeing %d", i);
 		CHECK(cudaFree(dimensions[i]));
 	}
 
