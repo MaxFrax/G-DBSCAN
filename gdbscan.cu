@@ -12,7 +12,7 @@
 }
 
 __global__ void compute_degrees(float** dataset, int d, int n, int* degrees, float squaredThreshold) {
-	extern __shared__ float* coordinates;
+	extern __shared__ float coordinates[];
 
 	int tid = blockDim.x * blockIdx.x + threadIdx.x;
 	int degree = 0;
@@ -23,7 +23,7 @@ __global__ void compute_degrees(float** dataset, int d, int n, int* degrees, flo
 	// 1. Load in shared memory the coordinates assigned to the current thread
     // At this stage, a nice performance boots would be assigning the unused shared memory to the L1 cache
 	for (int i = 0; i < d; i++) {
-		coordinates[i] = dataset[i][tid];
+		coordinates[d * threadIdx.x + i] = dataset[i][tid];
 	}
 
     // 2. Compare the current thread coordinates againts all the points in device memory
@@ -32,10 +32,12 @@ __global__ void compute_degrees(float** dataset, int d, int n, int* degrees, flo
 	for (int item = 0; item < n; item++) {
 		float sum = 0;
 		for (int dim = 0; dim < d; dim++) {
-			sum += powf(coordinates[dim] - dataset[dim][item], 2);
+			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim][item], 2);
 		}
 
-		degree += (sum > squaredThreshold);
+		if (sum < squaredThreshold) {
+			degree += 1;
+		}
 	}
 
     // 3. Store the computed degree in degrees
@@ -65,21 +67,31 @@ int main()
 
         // 2. Fill the arrays with random data
 		for (int k = 0; k < n; k++) {
-			j[k] = rand() / float(RAND_MAX) * 24.f + 1.f;
+			j[k] = rand() / float(RAND_MAX) * 20.f - 10.f;
 		}
+
+		dimensions[i] = j;
 	}
 
-
-    // 3. How do we compute grid and block size in a smart way?
-
-    // 4. Invoke kernel
-	compute_degrees << <(n / prop.maxThreadsPerBlock) + 1, prop.maxThreadsPerBlock, d * sizeof(float) >> > (dimensions, d, n, degrees, .3f);
+    // 3. Invoke kernel
+    // smem size / (d * sizeof(float)) = number of threads per block
+    int threadsPerBlock = min((int)(prop.sharedMemPerBlock / (d * sizeof(float))), prop.maxThreadsPerBlock);
+    printf("Threads per block %d\n", threadsPerBlock);
+	int blocksPerGrid = (n / threadsPerBlock) + 1;
+	printf("Blocks per grid %d\n", blocksPerGrid);
+	printf("Alloc smem %lu bytes of %lu bytes\n", threadsPerBlock * d * sizeof(float), prop.sharedMemPerBlock);
+	compute_degrees << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dimensions, d, n, degrees, .1f * .1f);
 
 	cudaDeviceSynchronize();
 
-	// 5. Free memory
+	for(int i = 0; i < n; i++) {
+		printf("%d\t", degrees[i]);
+	}
+
+	// 4. Free memory
 	for (int i = 0; i < d; i++) {
-		CHECK(cudaFree(&dimensions[i]));
+        printf("Freeing %d\n", i);
+		CHECK(cudaFree(dimensions[i]));
 	}
 
 	CHECK(cudaFree(dimensions));
@@ -87,6 +99,7 @@ int main()
 
 	// cudaDeviceReset must be called before exiting in order for profiling and
 	// tracing tools such as Nsight and Visual Profiler to show complete traces.
+    cudaDeviceSynchronize();
 	cudaError_t cudaStatus = cudaDeviceReset();
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaDeviceReset failed!");
