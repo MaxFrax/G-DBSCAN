@@ -78,7 +78,7 @@ __global__ void compute_adjacency_list(float* dataset, int d, int n, int* degree
 
 		if (sum < squaredThreshold) {
 			// 3. Store the adjacent node and increment adj ix
-			adjList[adjIndex + foundNeighbours] = tid;
+			adjList[adjIndex + foundNeighbours] = item;
 			foundNeighbours++;
 		}
 	}
