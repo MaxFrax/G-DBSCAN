@@ -152,14 +152,24 @@ __host__ void bfs(int * Fa, int * Xa, int v, int n, int * cluster, int currentCl
 	cudaDeviceSynchronize();
 }
 
-int main()
+int main(int argc, char **argv)
 {
 	cudaDeviceProp prop;
 	cudaGetDeviceProperties(&prop, 0);
 
 
-	int n = 1500;
-	int d = 2;
+	int n = -1;
+	int d = -1;
+	float threshold;
+	int MinPts;
+
+	if(argc != 2) {
+		return 1;
+	}
+
+	FILE * fp = fopen(argv[1], "r");
+
+	fscanf(fp, "# %d %d %f %d", &n, &d, &threshold, &MinPts);
 
 	float* dataset;
 	int* degrees;
@@ -174,54 +184,34 @@ int main()
 
 	for (int i = 0; i < d * n ; i++) {
         // 2. Fill the arrays with random data
-		//dataset[i] = rand() / float(RAND_MAX) * 20.f - 10.f;
-		dataset[i] = (i % 20) - 10;
+		float read;
+		fscanf(fp, "%f", &read);
+
+		dataset[i] = read;
 	}
 
+	fclose(fp);
+
     // 3. Invoke kernel
-    // smem size / (d * sizeof(float)) = number of threads per block
-	printf("Phase 1: Degrees\n");
     int threadsPerBlock = min((int)(prop.sharedMemPerBlock / (d * sizeof(float))), prop.maxThreadsPerBlock);
-    printf("Threads per block %d\n", threadsPerBlock);
 	int blocksPerGrid = (n / threadsPerBlock) + 1;
-	printf("Blocks per grid %d\n", blocksPerGrid);
-	printf("Alloc smem %lu bytes of %lu bytes\n", threadsPerBlock * d * sizeof(float), prop.sharedMemPerBlock);
-	compute_degrees << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dataset, d, n, degrees, .1f * .1f);
+	compute_degrees << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dataset, d, n, degrees, threshold * threshold);
 
 	cudaDeviceSynchronize();
 
-	for(int i = 0; i < n; i++) {
-		printf("%d\t", degrees[i]);
-	}
-	printf("\n");
-
 	// 4. Create the indexes pointing to the adjacency list with a prefix sum
-	printf("Phase 2: Adj List indexes\n");
 	thrust::exclusive_scan(degrees, degrees + n, adjIndex); 
 
-	for(int i = 0; i < n; i++) {
-		printf("%d\t", adjIndex[i]);
-	}
-
 	// 5. Compute adjacency list
-
-	// 6. Build the adjacency list
 	int adjListSize = adjIndex[n-1] + degrees[n-1];
 	CHECK(cudaMallocManaged(&adjList, adjListSize * sizeof(int)));
 
-	printf("\nPhase 3: Adjacency list\n");
-	compute_adjacency_list << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dataset, d, n, degrees, adjIndex, adjList, .1f * .1f);
+	compute_adjacency_list << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dataset, d, n, degrees, adjIndex, adjList, threshold * threshold);
 
 	cudaDeviceSynchronize();
-
-	for(int i = 0; i < adjListSize; i++) {
-		printf("%d\t", adjList[i]);
-	}
-
-	// 7. BFS
-
+	
+	// 6. BFS
 	int* Xa, *Fa, *cluster;
-	int MinPts = 5;
 	int nextCluster = 1;
 
 	CHECK(cudaMallocManaged(&Xa, n * sizeof(int)));
@@ -233,9 +223,7 @@ int main()
 
 
 	// Foreach core node:
-	// se core node corrente ha già un cluster = già visitato, skip
-	// altrimenti:
-	// BFS da nodo core corrente
+	// bfs if not already assigned to a cluster
 
 	for (int v = 0; v < n; v++) {
 		if(cluster[v] > 0 || degrees[v] < MinPts)
@@ -245,13 +233,15 @@ int main()
 		nextCluster++;
 	}
 
-	printf("\nPhase 4: BFS\n");
+	fp = fopen("out.txt", "w");
 
 	for(int i = 0; i < n; i++) {
-		printf("%d\t", cluster[i]);
+		fprintf(fp, "%d\n", cluster[i]);
 	}
 
-	// 8. Free memory
+	fclose(fp);
+
+	// 7. Free memory
 	CHECK(cudaFree(dataset));
 	CHECK(cudaFree(degrees));
 	CHECK(cudaFree(adjIndex));
