@@ -36,7 +36,7 @@ __global__ void compute_degrees(float* dataset, int d, int n, int* degrees, floa
 			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
 		}
 
-		if (sum < squaredThreshold) {
+		if (sum <= squaredThreshold) {
 			degree += 1;
 		}
 	}
@@ -76,7 +76,7 @@ __global__ void compute_adjacency_list(float* dataset, int d, int n, int* degree
 			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
 		}
 
-		if (sum < squaredThreshold) {
+		if (sum <= squaredThreshold) {
 			// 3. Store the adjacent node and increment adj ix
 			adjList[adjIndex + foundNeighbours] = item;
 			foundNeighbours++;
@@ -138,6 +138,7 @@ __host__ void bfs(int * Fa, int * Xa, int v, int n, int * cluster, int currentCl
 		cudaDeviceSynchronize();
 
 		// Checks if the frontier is empty
+		// TODO Can we do this on GPU?
 		FaEmpty = true;
 		for(int i = 0; i < n; i++) {
 			if(Fa[i] > 0){
@@ -154,6 +155,10 @@ __host__ void bfs(int * Fa, int * Xa, int v, int n, int * cluster, int currentCl
 
 int main(int argc, char **argv)
 {
+	cudaEvent_t start, stop;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
 	cudaDeviceProp prop;
 	cudaGetDeviceProperties(&prop, 0);
 
@@ -195,12 +200,24 @@ int main(int argc, char **argv)
     // 3. Invoke kernel
     int threadsPerBlock = min((int)(prop.sharedMemPerBlock / (d * sizeof(float))), prop.maxThreadsPerBlock);
 	int blocksPerGrid = (n / threadsPerBlock) + 1;
-	compute_degrees << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dataset, d, n, degrees, threshold * threshold);
 
-	cudaDeviceSynchronize();
+	float milliseconds;
+	CHECK(cudaEventRecord(start));
+	compute_degrees << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dataset, d, n, degrees, threshold * threshold);
+  	CHECK(cudaDeviceSynchronize());
+	CHECK(cudaEventRecord(stop));
+	CHECK(cudaEventSynchronize(stop));
+	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
+	printf("Compute degrees elapsed time               : %.2f (sec)\n", milliseconds / 1000.0);
 
 	// 4. Create the indexes pointing to the adjacency list with a prefix sum
+	CHECK(cudaEventRecord(start));	
 	thrust::exclusive_scan(degrees, degrees + n, adjIndex); 
+  	CHECK(cudaDeviceSynchronize());
+	CHECK(cudaEventRecord(stop));
+	CHECK(cudaEventSynchronize(stop));
+	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
+	printf("Exclusive scan elapsed time               : %.2f (sec)\n", milliseconds / 1000.0);
 
 	// 5. Compute adjacency list
 	int adjListSize = adjIndex[n-1] + degrees[n-1];
@@ -224,7 +241,8 @@ int main(int argc, char **argv)
 
 	// Foreach core node:
 	// bfs if not already assigned to a cluster
-
+	CHECK(cudaEventRecord(start));	
+	
 	for (int v = 0; v < n; v++) {
 		if(cluster[v] > 0 || degrees[v] < MinPts)
 			continue;
@@ -232,6 +250,12 @@ int main(int argc, char **argv)
 		bfs(Fa, Xa, v, n, cluster, nextCluster, degrees, adjIndex, adjList);
 		nextCluster++;
 	}
+
+  	CHECK(cudaDeviceSynchronize());
+	CHECK(cudaEventRecord(stop));
+	CHECK(cudaEventSynchronize(stop));
+	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
+	printf("BFS elapsed time               : %.2f (sec)\n", milliseconds / 1000.0);
 
 	fp = fopen("out.txt", "w");
 
@@ -252,7 +276,9 @@ int main(int argc, char **argv)
 
 	// cudaDeviceReset must be called before exiting in order for profiling and
 	// tracing tools such as Nsight and Visual Profiler to show complete traces.
-    cudaDeviceSynchronize();
+
+	cudaEventDestroy(start);
+	cudaEventDestroy(stop);
 	cudaError_t cudaStatus = cudaDeviceReset();
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaDeviceReset failed!");
