@@ -22,7 +22,7 @@ __global__ void compute_degrees(float* dataset, int d, int n, int* degrees, floa
 		return;
 
 	// 1. Load in shared memory the coordinates assigned to the current thread
-    // At this stage, a nice performance boots would be assigning the unused shared memory to the L1 cache
+    // At this stage, a nice performance boost would be assigning the unused shared memory to the L1 cache
 	for (int i = 0; i < d; i++) {
 		coordinates[d * threadIdx.x + i] = dataset[i * n + tid];
 	}
@@ -55,7 +55,7 @@ __global__ void compute_adjacency_list(float* dataset, int d, int n, int* degree
 		return;
 
 	// 1. Load in shared memory the coordinates assigned to the current thread
-    // At this stage, a nice performance boots would be assigning the unused shared memory to the L1 cache
+    // At this stage, a nice performance boost would be assigning the unused shared memory to the L1 cache
 	adjIndex = adjIndexArray[tid];
 	degree = degreeArray[tid];
 	for (int i = 0; i < d; i++) {
@@ -138,13 +138,11 @@ __host__ void bfs(int * Fa, int * Xa, int v, int n, int * cluster, int currentCl
 		cudaDeviceSynchronize();
 
 		// Checks if the frontier is empty
-		// TODO Can we do this on GPU?
-		FaEmpty = true;
-		for(int i = 0; i < n; i++) {
-			if(Fa[i] > 0){
-				FaEmpty = false;
-				break;
-			}
+		int toFind = 1;
+		int* res = thrust::find(thrust::device, Fa, Fa + n, toFind);
+		// If the pointer is "last", the search failed
+		if (res == Fa+n) {
+			break;
 		}
 	}
 
@@ -212,7 +210,7 @@ int main(int argc, char **argv)
 
 	// 4. Create the indexes pointing to the adjacency list with a prefix sum
 	CHECK(cudaEventRecord(start));	
-	thrust::exclusive_scan(degrees, degrees + n, adjIndex); 
+	thrust::exclusive_scan(thrust::device, degrees, degrees + n, adjIndex); 
   	CHECK(cudaDeviceSynchronize());
 	CHECK(cudaEventRecord(stop));
 	CHECK(cudaEventSynchronize(stop));
