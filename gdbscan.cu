@@ -34,10 +34,11 @@ __global__ void compute_degrees(float* dataset, int d, int n, int* degrees, floa
 		float sum = 0;
 		for (int dim = 0; dim < d; dim++) {
 			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
-		}
 
-		if (sum <= squaredThreshold) {
-			degree += 1;
+			if (sum <= squaredThreshold) {
+				degree += 1;
+				break;
+			}
 		}
 	}
 
@@ -121,20 +122,18 @@ __global__ void cluster_assignment(int * Xa, int * cluster, int n, int currentCl
 	}
 }
 
-__host__ void bfs(int * Fa, int * Xa, int v, int n, int * cluster, int currentCluster, int * degrees, int * adjListIx, int * adjList){
+__host__ void bfs(cudaDeviceProp *prop, int * Fa, int * Xa, int v, int n, int * cluster, int currentCluster, int * degrees, int * adjListIx, int * adjList){
 	
-	cudaDeviceProp prop;
-	cudaGetDeviceProperties(&prop, 0);
+	int blocks = prop->maxThreadsPerBlock;
 
-	int threadsPerBlock = prop.maxThreadsPerBlock;
-	int blocksPerGrid = (n / threadsPerBlock) + 1;
+	int blocksPerGrid = (n / blocks) + 1;
 
 	bool FaEmpty = false;
 	Fa[v] = 1;
 
 	while(!FaEmpty) {
 
-		kernel_bfs<<<blocksPerGrid, threadsPerBlock>>>(Fa, Xa, n, degrees, adjListIx, adjList);
+		kernel_bfs<<<blocksPerGrid, blocks>>>(Fa, Xa, n, degrees, adjListIx, adjList);
 		cudaDeviceSynchronize();
 
 		// Checks if the frontier is empty
@@ -147,12 +146,17 @@ __host__ void bfs(int * Fa, int * Xa, int v, int n, int * cluster, int currentCl
 	}
 
 	// Foreach visited node (Xa == 1) which is not assigned to a cluster, assign it to currentCluster
-	cluster_assignment<<<blocksPerGrid, threadsPerBlock>>>(Xa, cluster, n, currentCluster);
+	cluster_assignment<<<blocksPerGrid, blocks>>>(Xa, cluster, n, currentCluster);
 	cudaDeviceSynchronize();
 }
 
 int main(int argc, char **argv)
 {
+	cudaFuncSetCacheConfig(compute_degrees, cudaFuncCachePreferL1);
+	cudaFuncSetCacheConfig(compute_adjacency_list, cudaFuncCachePreferL1);
+	cudaFuncSetCacheConfig(compute_adjacency_list, cluster_assignment);
+
+
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
@@ -196,12 +200,12 @@ int main(int argc, char **argv)
 	fclose(fp);
 
     // 3. Invoke kernel
-    int threadsPerBlock = min((int)(prop.sharedMemPerBlock / (d * sizeof(float))), prop.maxThreadsPerBlock);
-	int blocksPerGrid = (n / threadsPerBlock) + 1;
+    int blocks = min((int)(prop.sharedMemPerBlock / (d * sizeof(float))), prop.maxThreadsPerBlock);
+	int blocksPerGrid = (n / blocks) + 1;
 
 	float milliseconds;
 	CHECK(cudaEventRecord(start));
-	compute_degrees << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dataset, d, n, degrees, threshold * threshold);
+	compute_degrees << <blocksPerGrid, blocks, blocks * d * sizeof(float) >> > (dataset, d, n, degrees, threshold * threshold);
   	CHECK(cudaDeviceSynchronize());
 	CHECK(cudaEventRecord(stop));
 	CHECK(cudaEventSynchronize(stop));
@@ -221,7 +225,16 @@ int main(int argc, char **argv)
 	int adjListSize = adjIndex[n-1] + degrees[n-1];
 	CHECK(cudaMallocManaged(&adjList, adjListSize * sizeof(int)));
 
-	compute_adjacency_list << <blocksPerGrid, threadsPerBlock, threadsPerBlock * d * sizeof(float) >> > (dataset, d, n, degrees, adjIndex, adjList, threshold * threshold);
+	CHECK(cudaEventRecord(start));	
+	
+	compute_adjacency_list << <blocksPerGrid, blocks, blocks * d * sizeof(float) >> > (dataset, d, n, degrees, adjIndex, adjList, threshold * threshold);
+
+  	CHECK(cudaDeviceSynchronize());
+	CHECK(cudaEventRecord(stop));
+	CHECK(cudaEventSynchronize(stop));
+	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
+	printf("Compute adj list elapsed time               : %.2f (sec)\n", milliseconds / 1000.0);
+
 
 	cudaDeviceSynchronize();
 	
@@ -245,7 +258,7 @@ int main(int argc, char **argv)
 		if(cluster[v] > 0 || degrees[v] < MinPts)
 			continue;
 
-		bfs(Fa, Xa, v, n, cluster, nextCluster, degrees, adjIndex, adjList);
+		bfs(&prop, Fa, Xa, v, n, cluster, nextCluster, degrees, adjIndex, adjList);
 		nextCluster++;
 	}
 
