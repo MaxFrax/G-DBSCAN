@@ -650,3 +650,5 @@ FodyWeavers.xsd
 *.tlog
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,c,cuda,visualstudio,visualstudiocode,macos,python,jupyternotebooks
+*.qdrep
+out.txt
