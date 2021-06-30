@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <thrust/scan.h>
+#include <time.h>
 
 #define CHECK(call)                                                         \
 {                                                                           \
@@ -154,7 +155,7 @@ int main(int argc, char **argv)
 {
 	cudaFuncSetCacheConfig(compute_degrees, cudaFuncCachePreferL1);
 	cudaFuncSetCacheConfig(compute_adjacency_list, cudaFuncCachePreferL1);
-	cudaFuncSetCacheConfig(compute_adjacency_list, cluster_assignment);
+	cudaFuncSetCacheConfig(compute_adjacency_list, cudaFuncCachePreferL1);
 
 
 	cudaEvent_t start, stop;
@@ -210,16 +211,17 @@ int main(int argc, char **argv)
 	CHECK(cudaEventRecord(stop));
 	CHECK(cudaEventSynchronize(stop));
 	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
-	printf("Compute degrees elapsed time               : %.2f (sec)\n", milliseconds / 1000.0);
+	printf("Compute degrees elapsed time               : %.3f (sec)\n", milliseconds / 1000.0);
 
 	// 4. Create the indexes pointing to the adjacency list with a prefix sum
-	CHECK(cudaEventRecord(start));	
+	CHECK(cudaEventRecord(start));
+
+	clock_t t;
+    t = clock();
 	thrust::exclusive_scan(thrust::device, degrees, degrees + n, adjIndex); 
-  	CHECK(cudaDeviceSynchronize());
-	CHECK(cudaEventRecord(stop));
-	CHECK(cudaEventSynchronize(stop));
-	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
-	printf("Exclusive scan elapsed time               : %.2f (sec)\n", milliseconds / 1000.0);
+    t = clock() - t;
+    double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+	printf("Exclusive scan elapsed time               : %.3f (sec)\n", time_taken);
 
 	// 5. Compute adjacency list
 	int adjListSize = adjIndex[n-1] + degrees[n-1];
@@ -233,7 +235,7 @@ int main(int argc, char **argv)
 	CHECK(cudaEventRecord(stop));
 	CHECK(cudaEventSynchronize(stop));
 	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
-	printf("Compute adj list elapsed time               : %.2f (sec)\n", milliseconds / 1000.0);
+	printf("Compute adj list elapsed time               : %.3f (sec)\n", milliseconds / 1000.0);
 
 
 	cudaDeviceSynchronize();
@@ -266,7 +268,7 @@ int main(int argc, char **argv)
 	CHECK(cudaEventRecord(stop));
 	CHECK(cudaEventSynchronize(stop));
 	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
-	printf("BFS elapsed time               : %.2f (sec)\n", milliseconds / 1000.0);
+	printf("BFS elapsed time               : %.3f (sec)\n", milliseconds / 1000.0);
 
 	fp = fopen("out.txt", "w");
 
