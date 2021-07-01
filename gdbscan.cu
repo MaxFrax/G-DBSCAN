@@ -31,8 +31,7 @@ __global__ void compute_degrees(float* dataset, int d, int n, int* degrees, floa
     // 2. Compare the current thread coordinates againts all the points in device memory
     // probably memory metrics will be a nightmare.
     // Can we use shared memory somehow to optimize the accesses?
-	for (int j = threadIdx.x; j < n + threadIdx.x; j++) {
-		int item = j % n;
+	for (int item = 0; item < n; item++) {
 
 		float sum = 0;
 		for (int dim = 0; dim < d; dim++) {
@@ -68,8 +67,7 @@ __global__ void compute_adjacency_list(float* dataset, int d, int n, int* degree
     // 2. Compare the current thread coordinates againts all the points in device memory
     // probably memory metrics will be a nightmare.
     // Can we use shared memory somehow to optimize the accesses?
-	for (int j = threadIdx.x; j < n + threadIdx.x; j++) {
-		int item = j % n;
+	for (int item = 0; item < n; item++) {
 
 		if(foundNeighbours >= degree){
 			return;
