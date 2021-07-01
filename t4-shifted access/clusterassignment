@@ -1,0 +1,142 @@
+==PROF== Connected to process 1258 (/content/drive/My Drive/G-DBSCAN/a.out)
+==PROF== Profiling "cluster_assignment": 0%....50%....100% - 32 passes
+Compute degrees elapsed time               : 0.985 (sec)
+Exclusive scan elapsed time               : 0.001 (sec)
+Compute adj list elapsed time               : 0.897 (sec)
+BFS elapsed time               : 6.908 (sec)
+==PROF== Disconnected from process 1258
+[1258] a.out@127.0.0.1
+  cluster_assignment(int*, int*, int, int), 2021-Jul-01 14:29:19, Context 1, Stream 7
+    Section: GPU Speed Of Light
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    DRAM Frequency                                                           cycle/nsecond                           4.91
+    SM Frequency                                                             cycle/usecond                         588.70
+    Elapsed Cycles                                                                   cycle                          6,209
+    Memory [%]                                                                           %                          33.48
+    SOL DRAM                                                                             %                          33.48
+    Duration                                                                       usecond                          10.53
+    SOL L1/TEX Cache                                                                     %                          20.15
+    SOL L2 Cache                                                                         %                          13.11
+    SM Active Cycles                                                                 cycle                       3,854.10
+    SM [%]                                                                               %                          12.53
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    WRN   This kernel exhibits low compute throughput and memory bandwidth utilization relative to the peak performance 
+          of this device. Achieved compute throughput and/or memory bandwidth below 60.0% of peak typically indicate    
+          latency issues. Look at Scheduler Statistics and Warp State Statistics for potential reasons.                 
+
+    OK    The ratio of peak float (fp32) to double (fp64) performance on this device is 32:1. The kernel achieved 0% of 
+          this device's fp32 peak performance and 0% of its fp64 peak performance.                                      
+
+    Section: Compute Workload Analysis
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Executed Ipc Active                                                         inst/cycle                           0.45
+    Executed Ipc Elapsed                                                        inst/cycle                           0.28
+    Issue Slots Busy                                                                     %                          11.78
+    Issued Ipc Active                                                           inst/cycle                           0.47
+    SM Busy                                                                              %                          11.78
+    ---------------------------------------------------------------------- --------------- ------------------------------
+          No pipeline is over-utilized.                                                                                 
+
+    Section: Memory Workload Analysis
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Memory Throughput                                                         Gbyte/second                         105.25
+    Mem Busy                                                                             %                          13.11
+    Max Bandwidth                                                                        %                          33.48
+    L1/TEX Hit Rate                                                                      %                          27.87
+    L2 Hit Rate                                                                          %                          29.79
+    Mem Pipes Busy                                                                       %                          12.53
+    ---------------------------------------------------------------------- --------------- ------------------------------
+
+    Section: Scheduler Statistics
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    One or More Eligible                                                                 %                          12.00
+    Issued Warp Per Scheduler                                                                                        0.12
+    No Eligible                                                                          %                          88.00
+    Active Warps Per Scheduler                                                        warp                           7.20
+    Eligible Warps Per Scheduler                                                      warp                           0.15
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    WRN   Every scheduler is capable of issuing one instruction per cycle, but for this kernel each scheduler only      
+          issues an instruction every 8.3 cycles. This might leave hardware resources underutilized and may lead to     
+          less optimal performance. Out of the maximum of 8 warps per scheduler, this kernel allocates an average of    
+          7.20 active warps per scheduler, but only an average of 0.15 warps were eligible per cycle. Eligible warps    
+          are the subset of active warps that are ready to issue their next instruction. Every cycle with no eligible   
+          warp results in no instruction being issued and the issue slot remains unused. To increase the number of      
+          eligible warps either increase the number of active warps or reduce the time the active warps are stalled.    
+
+    Section: Warp State Statistics
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Warp Cycles Per Issued Instruction                                               cycle                          60.06
+    Warp Cycles Per Executed Instruction                                             cycle                          62.26
+    Avg. Active Threads Per Warp                                                                                    21.15
+    Avg. Not Predicated Off Threads Per Warp                                                                        18.95
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    WRN   On average, each warp of this kernel spends 40.7 cycles being stalled waiting for a scoreboard dependency on  
+          a L1TEX (local, global, surface, texture) operation. This represents about 67.7% of the total average of      
+          60.1 cycles between issuing two instructions. To reduce the number of cycles waiting on L1TEX data accesses   
+          verify the memory access patterns are optimal for the target architecture, attempt to increase cache hit      
+          rates by increasing data locality or by changing the cache configuration, and consider moving frequently      
+          used data to shared memory.                                                                                   
+    ----- --------------------------------------------------------------------------------------------------------------
+    OK    Check the Source Counters section for the top stall locations in your source based on sampling data.          
+    ----- --------------------------------------------------------------------------------------------------------------
+    WRN   Instructions are executed in warps, which are groups of 32 threads. Optimal instruction throughput is         
+          achieved if all 32 threads of a warp execute the same instruction. The chosen launch configuration, early     
+          thread completion, and divergent flow control can significantly lower the number of active threads in a warp  
+          per cycle. This kernel achieves an average of 21.2 threads being active per cycle. This is further reduced    
+          to 19.0 threads per warp due to predication. The compiler may use predication to avoid an actual branch.      
+          Instead, all instructions are scheduled, but a per-thread condition code or predicate controls which threads  
+          execute the instructions. Try to avoid different execution paths within a warp when possible. In addition,    
+          ensure your kernel makes use of Independent Thread Scheduling, which allows a warp to reconverge after a      
+          data-dependent conditional block by explicitly calling __syncwarp().                                          
+
+    Section: Instruction Statistics
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Avg. Executed Instructions Per Scheduler                                          inst                         437.96
+    Executed Instructions                                                             inst                         70,073
+    Avg. Issued Instructions Per Scheduler                                            inst                         453.96
+    Issued Instructions                                                               inst                         72,633
+    ---------------------------------------------------------------------- --------------- ------------------------------
+
+    Section: Launch Statistics
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Block Size                                                                                                      1,024
+    Function Cache Configuration                                                                    cudaFuncCachePreferL1
+    Grid Size                                                                                                         123
+    Registers Per Thread                                                   register/thread                             16
+    Shared Memory Configuration Size                                                 Kbyte                          32.77
+    Driver Shared Memory Per Block                                              byte/block                              0
+    Dynamic Shared Memory Per Block                                             byte/block                              0
+    Static Shared Memory Per Block                                              byte/block                              0
+    Threads                                                                         thread                        125,952
+    Waves Per SM                                                                                                     3.08
+    ---------------------------------------------------------------------- --------------- ------------------------------
+
+    Section: Occupancy
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Block Limit SM                                                                   block                             16
+    Block Limit Registers                                                            block                              4
+    Block Limit Shared Mem                                                           block                             16
+    Block Limit Warps                                                                block                              1
+    Theoretical Active Warps per SM                                                   warp                             32
+    Theoretical Occupancy                                                                %                            100
+    Achieved Occupancy                                                                   %                          89.36
+    Achieved Active Warps Per SM                                                      warp                          28.59
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    WRN   This kernel's theoretical occupancy is not impacted by any block limit. The difference between calculated     
+          theoretical and measured achieved occupancy can be the result of warp scheduling overheads or workload        
+          imbalances during the kernel execution. Load imbalances can occur between warps within a block as well as     
+          across blocks of the same kernel.                                                                             
+
+    Section: Source Counters
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Branch Instructions Ratio                                                            %                           0.22
+    Branch Instructions                                                               inst                         15,535
+    Branch Efficiency                                                                    %                              0
+    Avg. Divergent Branches                                                                                             0
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    WRN   Uncoalesced global access, expected 3883 sectors, got 9836 (2.53x) at PC 0x7f9386dcfac0 at                    
+          /content/drive/MyDrive/G-DBSCAN/gdbscan.cu:123                                                                
+    ----- --------------------------------------------------------------------------------------------------------------
+    WRN   Uncoalesced global access, expected 3883 sectors, got 9836 (2.53x) at PC 0x7f9386dcfb00 at                    
+          /content/drive/MyDrive/G-DBSCAN/gdbscan.cu:124                                                                
+
