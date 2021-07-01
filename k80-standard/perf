@@ -1,6 +1,0 @@
-/content/drive/MyDrive/G-DBSCAN
-nvcc warning : The 'compute_35', 'compute_37', 'compute_50', 'sm_35', 'sm_37' and 'sm_50' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
-Compute degrees elapsed time               : 11.723 (sec)
-Exclusive scan elapsed time               : 0.001 (sec)
-Compute adj list elapsed time               : 11.924 (sec)
-BFS elapsed time               : 3.722 (sec)

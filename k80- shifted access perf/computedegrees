@@ -1,8 +1,0 @@
-==PROF== Connected to process 4265 (/content/drive/My Drive/G-DBSCAN/a.out)
-Compute degrees elapsed time               : 0.000 (sec)
-Exclusive scan elapsed time               : 0.001 (sec)
-Error: gdbscan.cu:230, code:1, reason: invalid argument
-==PROF== Disconnected from process 4265
-==ERROR== The application returned an error code (1).
-==WARNING== No kernels were profiled.
-==WARNING== Profiling kernels launched by child processes requires the --target-processes all option.
