@@ -34,8 +34,18 @@ __global__ void compute_degrees(float* dataset, int d, int n, int* degrees, floa
 	for (int item = 0; item < n; item++) {
 
 		float sum = 0;
-		for (int dim = 0; dim < d; dim++) {
-			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
+		// If true, the item must be in shared memory
+		int otherTid = item - blockDim.x * blockIdx.x;
+		if(otherTid < blockDim.x) {
+
+			for (int dim = 0; dim < d; dim++) {
+				sum += powf(coordinates[d * threadIdx.x + dim] - coordinates[d * otherTid + dim], 2);
+			}
+
+		} else {
+			for (int dim = 0; dim < d; dim++) {
+				sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
+			}
 		}
 
 		if (sum <= squaredThreshold) {
@@ -74,8 +84,18 @@ __global__ void compute_adjacency_list(float* dataset, int d, int n, int* degree
 		}
 
 		float sum = 0;
-		for (int dim = 0; dim < d; dim++) {
-			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
+		// If true, the item must be in shared memory
+		int otherTid = item - blockDim.x * blockIdx.x;
+		if(otherTid < blockDim.x) {
+
+			for (int dim = 0; dim < d; dim++) {
+				sum += powf(coordinates[d * threadIdx.x + dim] - coordinates[d * otherTid + dim], 2);
+			}
+
+		} else {
+			for (int dim = 0; dim < d; dim++) {
+				sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
+			}
 		}
 
 		if (sum <= squaredThreshold) {
