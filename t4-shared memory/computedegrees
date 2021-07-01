@@ -1,0 +1,121 @@
+==PROF== Connected to process 1372 (/content/drive/My Drive/G-DBSCAN/a.out)
+==PROF== Profiling "compute_degrees": 0%....50%....100% - 32 passes
+Compute degrees elapsed time               : 211.754 (sec)
+Exclusive scan elapsed time               : 0.001 (sec)
+Compute adj list elapsed time               : 0.912 (sec)
+BFS elapsed time               : 4.848 (sec)
+==PROF== Disconnected from process 1372
+[1372] a.out@127.0.0.1
+  compute_degrees(float*, int, int, int*, float), 2021-Jul-01 14:36:52, Context 1, Stream 7
+    Section: GPU Speed Of Light
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    DRAM Frequency                                                           cycle/nsecond                           4.87
+    SM Frequency                                                             cycle/usecond                         585.01
+    Elapsed Cycles                                                                   cycle                    974,389,216
+    Memory [%]                                                                           %                          10.02
+    SOL DRAM                                                                             %                           0.00
+    Duration                                                                        second                           1.67
+    SOL L1/TEX Cache                                                                     %                          15.04
+    SOL L2 Cache                                                                         %                           0.01
+    SM Active Cycles                                                                 cycle                 745,648,958.12
+    SM [%]                                                                               %                          67.03
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    WRN   Compute is more heavily utilized than Memory: Look at the Compute Workload Analysis report section to see     
+          what the compute pipelines are spending their time doing. Also, consider whether any computation is           
+          redundant and could be reduced or moved to look-up tables.                                                    
+
+    OK    The ratio of peak float (fp32) to double (fp64) performance on this device is 32:1. The kernel achieved 37%   
+          of this device's fp32 peak performance and 0% of its fp64 peak performance.                                   
+
+    Section: Compute Workload Analysis
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Executed Ipc Active                                                         inst/cycle                           3.24
+    Executed Ipc Elapsed                                                        inst/cycle                           2.48
+    Issue Slots Busy                                                                     %                          81.04
+    Issued Ipc Active                                                           inst/cycle                           3.24
+    SM Busy                                                                              %                          87.60
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    WRN   FMA is the highest-utilized pipeline (87.6%). It executes 32-bit floating point (FADD, FMUL, FMAD, ...) and   
+          integer (IMUL, IMAD) operations. The pipeline is over-utilized and likely a performance bottleneck.           
+
+    Section: Memory Workload Analysis
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Memory Throughput                                                         Mbyte/second                           2.08
+    Mem Busy                                                                             %                           7.52
+    Max Bandwidth                                                                        %                          10.02
+    L1/TEX Hit Rate                                                                      %                          99.45
+    L2 Hit Rate                                                                          %                          98.19
+    Mem Pipes Busy                                                                       %                          10.02
+    ---------------------------------------------------------------------- --------------- ------------------------------
+
+    Section: Scheduler Statistics
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    One or More Eligible                                                                 %                          81.12
+    Issued Warp Per Scheduler                                                                                        0.81
+    No Eligible                                                                          %                          18.88
+    Active Warps Per Scheduler                                                        warp                           7.85
+    Eligible Warps Per Scheduler                                                      warp                           3.25
+    ---------------------------------------------------------------------- --------------- ------------------------------
+
+    Section: Warp State Statistics
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Warp Cycles Per Issued Instruction                                               cycle                           9.68
+    Warp Cycles Per Executed Instruction                                             cycle                           9.68
+    Avg. Active Threads Per Warp                                                                                    31.99
+    Avg. Not Predicated Off Threads Per Warp                                                                        29.91
+    ---------------------------------------------------------------------- --------------- ------------------------------
+
+    Section: Instruction Statistics
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Avg. Executed Instructions Per Scheduler                                          inst                 604,265,434.40
+    Executed Instructions                                                             inst                 96,682,469,504
+    Avg. Issued Instructions Per Scheduler                                            inst                 604,265,450.40
+    Issued Instructions                                                               inst                 96,682,472,064
+    ---------------------------------------------------------------------- --------------- ------------------------------
+
+    Section: Launch Statistics
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Block Size                                                                                                      1,024
+    Function Cache Configuration                                                                    cudaFuncCachePreferL1
+    Grid Size                                                                                                         123
+    Registers Per Thread                                                   register/thread                             44
+    Shared Memory Configuration Size                                                 Kbyte                          32.77
+    Driver Shared Memory Per Block                                              byte/block                              0
+    Dynamic Shared Memory Per Block                                            Kbyte/block                           8.19
+    Static Shared Memory Per Block                                              byte/block                              0
+    Threads                                                                         thread                        125,952
+    Waves Per SM                                                                                                     3.08
+    ---------------------------------------------------------------------- --------------- ------------------------------
+
+    Section: Occupancy
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Block Limit SM                                                                   block                             16
+    Block Limit Registers                                                            block                              1
+    Block Limit Shared Mem                                                           block                              8
+    Block Limit Warps                                                                block                              1
+    Theoretical Active Warps per SM                                                   warp                             32
+    Theoretical Occupancy                                                                %                            100
+    Achieved Occupancy                                                                   %                          98.04
+    Achieved Active Warps Per SM                                                      warp                          31.37
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    OK    This kernel's theoretical occupancy is not impacted by any block limit.                                       
+
+    Section: Source Counters
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    Branch Instructions Ratio                                                            %                           0.05
+    Branch Instructions                                                               inst                  4,879,779,466
+    Branch Efficiency                                                                    %                            100
+    Avg. Divergent Branches                                                                                             0
+    ---------------------------------------------------------------------- --------------- ------------------------------
+    WRN   Uncoalesced shared access, expected 968754176 sectors, got 1937258496 (2.00x) at PC 0x7f6d74dd3ac0 at         
+          /content/drive/MyDrive/G-DBSCAN/gdbscan.cu:47                                                                 
+    ----- --------------------------------------------------------------------------------------------------------------
+    WRN   Uncoalesced shared access, expected 7995824 sectors, got 15991504 (2.00x) at PC 0x7f6d74dd4170 at             
+          /content/drive/MyDrive/G-DBSCAN/gdbscan.cu:42                                                                 
+    ----- --------------------------------------------------------------------------------------------------------------
+    WRN   Uncoalesced shared access, expected 3907 sectors, got 7813 (2.00x) at PC 0x7f6d74dd31f0 at                    
+          /content/drive/MyDrive/G-DBSCAN/gdbscan.cu:28                                                                 
+    ----- --------------------------------------------------------------------------------------------------------------
+    WRN   Uncoalesced shared access, expected 3907 sectors, got 7813 (2.00x) at PC 0x7f6d74dd3250 at                    
+          /content/drive/MyDrive/G-DBSCAN/gdbscan.cu:28                                                                 
+
