@@ -31,15 +31,16 @@ __global__ void compute_degrees(float* dataset, int d, int n, int* degrees, floa
     // 2. Compare the current thread coordinates againts all the points in device memory
     // probably memory metrics will be a nightmare.
     // Can we use shared memory somehow to optimize the accesses?
-	for (int item = 0; item < n; item++) {
+	for (int j = threadIdx.x; j < n + threadIdx.x; j++) {
+		int item = j % n;
+
 		float sum = 0;
 		for (int dim = 0; dim < d; dim++) {
 			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
+		}
 
-			if (sum <= squaredThreshold) {
-				degree += 1;
-				break;
-			}
+		if (sum <= squaredThreshold) {
+			degree += 1;
 		}
 	}
 
@@ -67,7 +68,8 @@ __global__ void compute_adjacency_list(float* dataset, int d, int n, int* degree
     // 2. Compare the current thread coordinates againts all the points in device memory
     // probably memory metrics will be a nightmare.
     // Can we use shared memory somehow to optimize the accesses?
-	for (int item = 0; item < n; item++) {
+	for (int j = threadIdx.x; j < n + threadIdx.x; j++) {
+		int item = j % n;
 
 		if(foundNeighbours >= degree){
 			return;
@@ -155,7 +157,7 @@ int main(int argc, char **argv)
 {
 	cudaFuncSetCacheConfig(compute_degrees, cudaFuncCachePreferL1);
 	cudaFuncSetCacheConfig(compute_adjacency_list, cudaFuncCachePreferL1);
-	cudaFuncSetCacheConfig(compute_adjacency_list, cudaFuncCachePreferL1);
+	cudaFuncSetCacheConfig(cluster_assignment, cudaFuncCachePreferL1);
 
 
 	cudaEvent_t start, stop;
