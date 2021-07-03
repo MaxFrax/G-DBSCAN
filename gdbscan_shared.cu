@@ -160,7 +160,7 @@ __host__ void bfs(cudaDeviceProp *prop, int *Fa, int *Xa, int v, int n, int *clu
 	while (!FaEmpty)
 	{
 
-		kernel_bfs<<<blocksPerGrid, blocks> > >(Fa, Xa, n, degrees, adjListIx, adjList);
+		kernel_bfs<<<blocksPerGrid, blocks>>>(Fa, Xa, n, degrees, adjListIx, adjList);
 		cudaDeviceSynchronize();
 
 		// Checks if the frontier is empty
@@ -174,7 +174,7 @@ __host__ void bfs(cudaDeviceProp *prop, int *Fa, int *Xa, int v, int n, int *clu
 	}
 
 	// Foreach visited node (Xa == 1) which is not assigned to a cluster, assign it to currentCluster
-	cluster_assignment<<<blocksPerGrid, blocks> > >(Xa, cluster, n, currentCluster);
+	cluster_assignment<<<blocksPerGrid, blocks>>>(Xa, cluster, n, currentCluster);
 	cudaDeviceSynchronize();
 }
 
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 
 	float milliseconds;
 	CHECK(cudaEventRecord(start));
-	compute_degrees<<<blocksPerGrid, blocks, blocks * d * sizeof(float)> > >(dataset, d, n, degrees, threshold * threshold);
+	compute_degrees<<<blocksPerGrid, blocks, blocks * d * sizeof(float)>>>(dataset, d, n, degrees, threshold * threshold);
 	CHECK(cudaDeviceSynchronize());
 	CHECK(cudaEventRecord(stop));
 	CHECK(cudaEventSynchronize(stop));
@@ -256,7 +256,7 @@ int main(int argc, char **argv)
 
 	CHECK(cudaEventRecord(start));
 
-	compute_adjacency_list<<<blocksPerGrid, blocks, blocks * d * sizeof(float)> > >(dataset, d, n, degrees, adjIndex, adjList, threshold * threshold);
+	compute_adjacency_list<<<blocksPerGrid, blocks, blocks * d * sizeof(float)>>>(dataset, d, n, degrees, adjIndex, adjList, threshold * threshold);
 
 	CHECK(cudaDeviceSynchronize());
 	CHECK(cudaEventRecord(stop));
