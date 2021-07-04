@@ -1,0 +1,4 @@
+Compute degrees elapsed time               : 4.395 (sec)
+Exclusive scan elapsed time               : 0.001 (sec)
+Compute adj list elapsed time               : 4.411 (sec)
+BFS elapsed time               : 0.056 (sec)

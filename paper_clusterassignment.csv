@@ -1,0 +1,8 @@
+==PROF== Connected to process 3171 (/content/drive/My Drive/G-DBSCAN/a.out)
+Compute degrees elapsed time               : 4.395 (sec)
+Exclusive scan elapsed time               : 0.001 (sec)
+Compute adj list elapsed time               : 4.411 (sec)
+BFS elapsed time               : 0.315 (sec)
+==PROF== Disconnected from process 3171
+==WARNING== No kernels were profiled.
+==WARNING== Profiling kernels launched by child processes requires the --target-processes all option.

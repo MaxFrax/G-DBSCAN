@@ -37,12 +37,9 @@ __global__ void compute_degrees(float *dataset, int d, int n, int *degrees, floa
 	{
 
 		float sum = 0;
-		// If true, the item must be in shared memory
-		int otherTid = item - blockDim.x * blockIdx.x;
 		for (int dim = 0; dim < d; dim++)
 		{
-			float otherCoordinate = (otherTid < blockDim.x) ? coordinates[d * otherTid + dim] : dataset[dim * n + item];
-			sum += powf(coordinates[d * threadIdx.x + dim] - otherCoordinate, 2);
+			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
 		}
 
 		if (sum <= squaredThreshold)
@@ -86,13 +83,9 @@ __global__ void compute_adjacency_list(float *dataset, int d, int n, int *degree
 		}
 
 		float sum = 0;
-		// If true, the item must be in shared memory
-		int otherTid = item - blockDim.x * blockIdx.x;
-
 		for (int dim = 0; dim < d; dim++)
 		{
-			float otherCoordinate = (otherTid < blockDim.x) ? coordinates[d * otherTid + dim] : dataset[dim * n + item];
-			sum += powf(coordinates[d * threadIdx.x + dim] - otherCoordinate, 2);
+			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
 		}
 
 		if (sum <= squaredThreshold)
@@ -134,19 +127,6 @@ __global__ void kernel_bfs(int *Fa, int *Xa, int n, int *degrees, int *adjListIx
 	}
 }
 
-__global__ void cluster_assignment(int *Xa, int *cluster, int n, int currentCluster)
-{
-	int tid = blockDim.x * blockIdx.x + threadIdx.x;
-
-	if (tid >= n)
-		return;
-
-	if (Xa[tid] == 1 && cluster[tid] == 0)
-	{
-		cluster[tid] = currentCluster;
-	}
-}
-
 __host__ void bfs(cudaDeviceProp *prop, int *Fa, int *Xa, int v, int n, int *cluster, int currentCluster, int *degrees, int *adjListIx, int *adjList)
 {
 
@@ -164,25 +144,31 @@ __host__ void bfs(cudaDeviceProp *prop, int *Fa, int *Xa, int v, int n, int *clu
 		cudaDeviceSynchronize();
 
 		// Checks if the frontier is empty
-		int toFind = 1;
-		int *res = thrust::find(thrust::device, Fa, Fa + n, toFind);
-		// If the pointer is "last", the search failed
-		if (res == Fa + n)
+		FaEmpty = true;
+		for (int i = 0; i < n; i++)
 		{
-			break;
+			if (Fa[i] > 0)
+			{
+				FaEmpty = false;
+				break;
+			}
+		}
+
+		// Foreach visited node (Xa == 1) which is not assigned to a cluster, assign it to currentCluster
+		for (int i = 0; i < n; i++)
+		{
+			if (Xa[i] == 1 && cluster[i] == 0)
+			{
+				cluster[i] = currentCluster;
+			}
 		}
 	}
-
-	// Foreach visited node (Xa == 1) which is not assigned to a cluster, assign it to currentCluster
-	cluster_assignment<<<blocksPerGrid, blocks>>>(Xa, cluster, n, currentCluster);
-	cudaDeviceSynchronize();
 }
 
 int main(int argc, char **argv)
 {
 	cudaFuncSetCacheConfig(compute_degrees, cudaFuncCachePreferL1);
 	cudaFuncSetCacheConfig(compute_adjacency_list, cudaFuncCachePreferL1);
-	cudaFuncSetCacheConfig(cluster_assignment, cudaFuncCachePreferL1);
 
 	cudaEvent_t start, stop;
 	cudaEventCreate(&start);
@@ -296,7 +282,7 @@ int main(int argc, char **argv)
 	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
 	printf("BFS elapsed time               : %.3f (sec)\n", milliseconds / 1000.0);
 
-	fp = fopen("out_shared.txt", "w");
+	fp = fopen("out_paper.txt", "w");
 
 	for (int i = 0; i < n; i++)
 	{
