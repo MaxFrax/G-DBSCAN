@@ -37,9 +37,12 @@ __global__ void compute_degrees(float *dataset, int d, int n, int *degrees, floa
 	{
 
 		float sum = 0;
+		// If true, the item must be in shared memory
+		int otherTid = item - blockDim.x * blockIdx.x;
 		for (int dim = 0; dim < d; dim++)
 		{
-			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
+			float otherCoordinate = (otherTid < blockDim.x) ? coordinates[d * otherTid + dim] : dataset[dim * n + item];
+			sum += powf(coordinates[d * threadIdx.x + dim] - otherCoordinate, 2);
 		}
 
 		if (sum <= squaredThreshold)
@@ -83,9 +86,13 @@ __global__ void compute_adjacency_list(float *dataset, int d, int n, int *degree
 		}
 
 		float sum = 0;
+		// If true, the item must be in shared memory
+		int otherTid = item - blockDim.x * blockIdx.x;
+
 		for (int dim = 0; dim < d; dim++)
 		{
-			sum += powf(coordinates[d * threadIdx.x + dim] - dataset[dim * n + item], 2);
+			float otherCoordinate = (otherTid < blockDim.x) ? coordinates[d * otherTid + dim] : dataset[dim * n + item];
+			sum += powf(coordinates[d * threadIdx.x + dim] - otherCoordinate, 2);
 		}
 
 		if (sum <= squaredThreshold)
@@ -289,7 +296,7 @@ int main(int argc, char **argv)
 	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
 	printf("BFS elapsed time               : %.3f (sec)\n", milliseconds / 1000.0);
 
-	fp = fopen("out.txt", "w");
+	fp = fopen("out_shared.txt", "w");
 
 	for (int i = 0; i < n; i++)
 	{

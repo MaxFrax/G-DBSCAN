@@ -33,8 +33,9 @@ __global__ void compute_degrees(float *dataset, int d, int n, int *degrees, floa
 	// 2. Compare the current thread coordinates againts all the points in device memory
 	// probably memory metrics will be a nightmare.
 	// Can we use shared memory somehow to optimize the accesses?
-	for (int item = 0; item < n; item++)
+	for (int j = threadIdx.x; j < n + threadIdx.x; j++)
 	{
+		int item = j % n;
 
 		float sum = 0;
 		for (int dim = 0; dim < d; dim++)
@@ -74,8 +75,9 @@ __global__ void compute_adjacency_list(float *dataset, int d, int n, int *degree
 	// 2. Compare the current thread coordinates againts all the points in device memory
 	// probably memory metrics will be a nightmare.
 	// Can we use shared memory somehow to optimize the accesses?
-	for (int item = 0; item < n; item++)
+	for (int j = threadIdx.x; j < n + threadIdx.x; j++)
 	{
+		int item = j % n;
 
 		if (foundNeighbours >= degree)
 		{
@@ -289,7 +291,7 @@ int main(int argc, char **argv)
 	CHECK(cudaEventElapsedTime(&milliseconds, start, stop));
 	printf("BFS elapsed time               : %.3f (sec)\n", milliseconds / 1000.0);
 
-	fp = fopen("out.txt", "w");
+	fp = fopen("out_shifted.txt", "w");
 
 	for (int i = 0; i < n; i++)
 	{
